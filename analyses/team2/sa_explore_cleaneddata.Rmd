@@ -89,7 +89,7 @@ judge_names_gt_10000 <- dispositions %>%
   count(disposing_authority__first_name, disposing_authority__middle_name, 
            disposing_authority__last_name) %>% 
   filter(!is.na(disposing_authority__last_name)) %>% 
-  filter(n > 10000)
+  filter(n > 6000)
 
 #count(judge_names)
 #judge_names %>% 
