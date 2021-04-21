@@ -81,7 +81,30 @@ How do the distribution of `max_period_days` look like?
 dispositions %>% 
   filter(!is.na(max_period_days)) %>% 
   ggplot(aes(x = max_period_days)) +
-  geom_freqpoly(aes(color = sentence_type))
+  geom_freqpoly(aes(color = sentence_type)) +
+  scale_x_log10()
+```
+```{r}
+judge_names_gt_10000 <- dispositions %>% 
+  count(disposing_authority__first_name, disposing_authority__middle_name, 
+           disposing_authority__last_name) %>% 
+  filter(!is.na(disposing_authority__last_name)) %>% 
+  filter(n > 10000)
+
+#count(judge_names)
+#judge_names %>% 
+#  arrange(n)
+
+
+
+```
+```{r}
+dispositions %>% 
+  semi_join(judge_names_gt_10000) %>% 
+  arrange(docket_id) %>% 
+  ggplot(aes(x = disposing_authority__last_name, y = max_period_days)) +
+  geom_boxplot() +
+  coord_flip()
 ```
 
 What are the min, max, and average number of offenses in a docket?
