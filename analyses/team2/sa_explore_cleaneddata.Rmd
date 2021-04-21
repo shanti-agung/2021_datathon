@@ -1,0 +1,196 @@
+---
+title: "Explore clean dataset"
+author: "Shanti Agung"
+date: "4/21/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This notebook is to explore clean dataset that Eamon has preprocessed. 
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+dispositions <- read_csv(file.path(rprojroot::find_root(rprojroot::is_rstudio_project),
+                                   "data", "offenses_dispositions_v3_grades.csv"),
+                         col_types = cols(
+  #X1 = col_double(),
+  docket_id = col_double(),
+  description = col_character(),
+  statute_description = col_character(),
+  statute_name = col_character(),
+  sequence_number = col_double(),
+  grade = col_character(),
+  disposition = col_character(),
+  disposing_authority__first_name = col_character(),
+  disposing_authority__middle_name = col_character(),
+  disposing_authority__last_name = col_character(),
+  disposing_authority__title = col_character(),
+  disposing_authority__document_name = col_character(),
+  disposition_method = col_character(),
+  min_period = col_character(),
+  max_period = col_character(),
+  period = col_character(),
+  credit = col_double(),
+  sentence_type = col_character(),
+  min_period_parsed = col_character(),
+  max_period_parsed = col_character(),
+  min_period_days = col_character(),
+  max_period_days = col_double(),
+  grade_backfilled = col_character()
+))
+```
+
+Look at `sentence type`
+
+```{r}
+dispositions %>% 
+  count(sentence_type)
+```
+
+Are there sentence_type that is Confinement without `max_period_days`?
+```{r}
+dispositions %>% 
+  filter(sentence_type == "Confinement" & is.na(max_period_days)) %>% 
+  count()
+```
+
+Which `sentence_type`is _without_ `max_period_days`?
+```{r}
+dispositions %>% 
+  filter(is.na(max_period_days)) %>% 
+  count(sentence_type)
+```
+Note that all IPP has `max_period_days`
+
+Which `sentence_type` has `max_period_days`? 
+```{r}
+dispositions %>% 
+  filter(!is.na(max_period_days)) %>% 
+  count(sentence_type)
+```
+
+How do the distribution of `max_period_days` look like?
+
+```{r}
+dispositions %>% 
+  filter(!is.na(max_period_days)) %>% 
+  ggplot(aes(x = max_period_days)) +
+  geom_freqpoly(aes(color = sentence_type))
+```
+
+What are the min, max, and average number of offenses in a docket?
+
+```{r}
+
+dispositions %>% 
+  filter(!(sequence_number %in% c(99999, 9999, 9998, 9997, 999, 998))) %>% 
+  distinct(docket_id, description, statute_description, sentence_type, .keep_all = TRUE) %>% 
+  group_by(docket_id) %>%
+  summarise(num_offense = n()) %>% 
+  #arrange(desc(num_offense))
+  ggplot(aes(num_offense)) +
+  geom_histogram(fill = "#7fbf7b") +
+  labs(title = "Offenses per Docket",
+       x = "Number of offenses",
+       y = "Number of dockets",
+       caption = "Data from offenses_dispositions.csv \nOnly offenses unique in docket_id, description, statute_description, and sentence_type variables are included\nInclude offenses where values of sequence_number variable are 99999, 9999, 9998, 9997, 999, and 998")
+
+
+```
+
+After removing problematic seequence number, look at `sentence type` again. Hope I am not accidentaly cutting out `max_period_days`
+
+```{r}
+dispositions %>% 
+  filter(!(sequence_number %in% c(99999, 9999, 9998, 9997, 999, 998))) %>% 
+  distinct(docket_id, description, statute_description, sentence_type, .keep_all = TRUE) %>% 
+  count(sentence_type)
+```
+
+What are these observations with missing `sentence_type`? For example, docket_id = 2.
+```{r}
+dispositions %>% 
+  filter(!(sequence_number %in% c(99999, 9999, 9998, 9997, 999, 998))) %>% 
+  distinct(docket_id, description, statute_description, sentence_type, .keep_all = TRUE) %>% 
+  filter(docket_id == 2) 
+```
+Of the four offenses, only one has `sentence_type` non-missing. Does this mean that judges consider the whole docket rather than per offense?
+
+To check this, are there `docket_id` without any `sentence_type`?
+```{r}
+dispositions %>% 
+  filter(!(sequence_number %in% c(99999, 9999, 9998, 9997, 999, 998))) %>% 
+  distinct(docket_id, description, statute_description, sentence_type, .keep_all = TRUE) %>% 
+  mutate(has_sentence = !is.na(sentence_type)) %>% 
+  group_by(docket_id) %>% 
+  summarise(num_sentence = sum(has_sentence)) %>% 
+  ungroup() %>% 
+  count(num_sentence)
+```
+
+are there `docket_id` without any `sentence_type`?
+
+```{r}
+dispositions %>% 
+  mutate(has_sentence = !is.na(sentence_type)) %>% 
+  group_by(docket_id) %>% 
+  summarise(num_sentence = sum(has_sentence)) %>% 
+  ungroup() %>% 
+  count(num_sentence)
+```
+
+Are `docket_id` without sentence_type because they are still in process?
+
+```{r}
+dddcols = cols(
+  docket_id = col_double(),
+  gender = col_character(),
+  race = col_character(),
+  date_of_birth = col_date(format = ""),
+  arrest_date = col_date(format = ""),
+  complaint_date = col_date(format = ""),
+  disposition_date = col_date(format = ""),
+  filing_date = col_date(format = ""),
+  initiation_date = col_date(format = ""),
+  status_name = col_character(),
+  court_office__court__display_name = col_character(),
+  current_processing_status__processing_status = col_character(),
+  current_processing_status__status_change_datetime = col_date(format = ""),
+  municipality__name = col_character(),
+  municipality__county__name = col_character(),
+  judicial_districts = col_character(),
+  court_office_types = col_character(),
+  court_types = col_character(),
+  representation_type = col_character()
+)
+dockets <- readr::read_csv('https://storage.googleapis.com/jat-rladies-2021-datathon/defendant_docket_details.csv',
+                       col_types = dddcols)
+```
+
+```{r}
+dispositions_dockets <- dispositions %>% 
+  left_join(dockets, by = "docket_id")
+```
+
+```{r}
+dispositions_dockets %>%
+  count(status_name)
+```
+
+
+```{r}
+dispositions_dockets %>% 
+  filter(status_name %in% c("Inactive")) %>% 
+  mutate(has_sentence = !is.na(sentence_type)) %>% 
+  group_by(docket_id) %>% 
+  summarise(num_sentence = sum(has_sentence)) %>% 
+  ungroup() %>% 
+  count(num_sentence)
+```
+
