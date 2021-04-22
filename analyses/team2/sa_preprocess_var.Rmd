@@ -96,7 +96,26 @@ dispositions %>%
 ```
 `docket_id` = 3 has 3 offenses, two of them results in confinement. One for 700 days and the other for 1826 days.
 
-Let's look at another `docket_id`. `docket_id` = 104 has 
+Let's look at another `docket_id`. `docket_id` = 104 has 4 offenses that results in confinement. 
+```{r}
+dispositions %>% 
+  filter(docket_id == 104)
+```
+This defendant offenses are: conspiracy, carry firearms, criminal attempt, firearms to be carried without license. For each of these offenses, the defendant received different length of confinement. 
+
+_approach_ : for a `docket_id` that has multiple confinement decisions, the `days_of_confinement` is the sum of `max_period_days` for offenses, in that docket, that results in confinement. With this approach, we treat as if all sentences are executed consecutively, rather than concurrently or a combination of them. `total_confinement_days` seems to better variable name.
+
+```{r}
+# create total_confinement_days
+dispositions %>% 
+  group_by(docket_id) %>%
+  mutate(confinement_days = if_else(sentence_type == "Confinement", max_period_days, 0)) %>% 
+  mutate(total_confinement_days = sum(confinement_days)) %>% 
+  ungroup() %>% 
+  select(-confinement_days)
+  #filter(docket_id == 104) 
+
+```
 
 
 
