@@ -144,9 +144,61 @@ dispositions %>%
   #filter(docket_id == 104) 
 
 ```
+## Create covariates
 
+### Number of a grade offenses
+
+Are there offenses with `grade_backfilled` missing? Yes, there are.
+```{r}
+dispositions %>% 
+  count(grade_backfilled)
+```
+
+Exclude offenses that have missing values in `grade_backfilled`
+```{r}
+dispositions %>% 
+  select(docket_id, grade_backfilled) %>% 
+  filter(!is.na(grade_backfilled)) %>% 
+  count(docket_id, grade_backfilled)
+```
+
+
+
+```{r}
+dispositions_grades <- dispositions %>% 
+  select(docket_id, grade_backfilled) %>% 
+  filter(!is.na(grade_backfilled)) %>% 
+  count(docket_id, grade_backfilled) %>% 
+  pivot_wider(names_from = grade_backfilled, values_from = n) %>% 
+  mutate(across(2:16, ~replace_na(., 0)))
 
 ```
 
+```{r}
+dispositions_grades
+```
+
+
+
+
+
+## Check for other covariates
+
+```{r}
+dockets %>% 
+  count(representation_type)
+```
+
+Has no missing values:
+* `court_types` 
+* `judicial_districts`
+* `court_office_types`
+* `representation_type`
+
+Information may be captured by judicial districts, and has missing values:
+* `municipality_name`
+* `municipality__county__name`
+
+```
 
 
