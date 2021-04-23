@@ -179,7 +179,72 @@ dispositions_grades
 ```
 
 
+### Judge ID
 
+How many judges are there in the data set?
+
+```{r}
+dispositions %>% 
+  distinct(disposing_authority__first_name, disposing_authority__middle_name, 
+           disposing_authority__last_name) %>% 
+  filter(!is.na(disposing_authority__last_name)) %>% 
+  select(disposing_authority__last_name, disposing_authority__first_name,
+         disposing_authority__middle_name) %>% 
+  arrange(disposing_authority__last_name, disposing_authority__first_name) %>% 
+  count()
+```
+
+Note that there are these three entries in `disposing_authority__last_name`.
+```{r}
+dispositions %>% 
+  distinct(disposing_authority__first_name, disposing_authority__middle_name, 
+           disposing_authority__last_name) %>% 
+  select(disposing_authority__last_name, disposing_authority__first_name,
+         disposing_authority__middle_name) %>% 
+  arrange(disposing_authority__last_name, disposing_authority__first_name) %>% 
+  filter(str_detect(disposing_authority__last_name, pattern = "Pennsylvania"))
+```
+```{r}
+# create judge_id only
+dispositions %>% 
+  filter(!is.na(disposing_authority__last_name)) %>% 
+  arrange(disposing_authority__last_name, disposing_authority__first_name) %>% 
+  mutate(judge_id = group_indices(., disposing_authority__last_name,
+                                  disposing_authority__middle_name,
+                                  disposing_authority__first_name)) %>% 
+  select(judge_id, disposing_authority__last_name, disposing_authority__first_name, 
+           disposing_authority__middle_name) %>% 
+  distinct(judge_id, .keep_all = TRUE) %>% 
+  arrange(judge_id)
+  
+```
+Same number of judges: 191.
+
+
+```{r}
+# create docket - judge_id
+# note that docket_judge_id contains only dockets that have non-missing judge's last name
+dockets_judges <- dispositions %>% 
+  filter(!is.na(disposing_authority__last_name)) %>% 
+  arrange(disposing_authority__last_name, disposing_authority__first_name) %>% 
+  mutate(judge_id = group_indices(., disposing_authority__last_name,
+                                  disposing_authority__middle_name,
+                                  disposing_authority__first_name)) %>% 
+  select(docket_id, judge_id, disposing_authority__last_name, disposing_authority__first_name, 
+           disposing_authority__middle_name) %>% 
+  distinct(docket_id, .keep_all = TRUE) %>% 
+  arrange(docket_id)
+```
+
+```{r}
+dockets_judges
+```
+
+### Indicators: court_types
+
+```{r}
+
+```
 
 
 ## Check for other covariates
@@ -198,6 +263,8 @@ Has no missing values:
 Information may be captured by judicial districts, and has missing values:
 * `municipality_name`
 * `municipality__county__name`
+
+
 
 ```
 
