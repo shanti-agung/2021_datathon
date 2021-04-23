@@ -209,11 +209,21 @@ dispositions_dockets %>%
 
 ```{r}
 dispositions_dockets %>% 
-  filter(status_name %in% c("Inactive")) %>% 
+  filter(status_name %in% c("Active")) %>% 
   mutate(has_sentence = !is.na(sentence_type)) %>% 
   group_by(docket_id) %>% 
   summarise(num_sentence = sum(has_sentence)) %>% 
   ungroup() %>% 
   count(num_sentence)
+```
+
+```{r}
+dispositions_dockets %>% 
+  filter(status_name %in% c("Active")) %>% 
+  mutate(has_sentence = !is.na(sentence_type)) %>% 
+  group_by(docket_id) %>% 
+  mutate(num_sentence = sum(has_sentence)) %>% 
+  ungroup() %>% 
+  filter(docket_id == 267625)
 ```
 
