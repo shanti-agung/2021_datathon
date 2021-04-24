@@ -147,16 +147,29 @@ _approach_: for a `docket_id` that has multiple confinement decisions, the `max_
 
 ```{r}
 # create total_confinement_days and max_confinement_days
-dispositions %>% 
+dockets_confinement <- dispositions %>% 
+  filter(!is.na(sentence_type)) %>% 
   group_by(docket_id) %>%
   mutate(confinement_days = if_else(sentence_type == "Confinement", max_period_days, 0)) %>% 
-  mutate(total_confinement_days = sum(confinement_days),
-         max_confinement_days = max(confinement_days)) %>% 
+  mutate(total_confinement_days = sum(confinement_days, na.rm = TRUE),
+         max_confinement_days = max(confinement_days, na.rm = TRUE)) %>% 
   ungroup() %>% 
-  select(-confinement_days) 
-  #filter(docket_id == 104) 
+  select(docket_id, total_confinement_days, max_confinement_days) %>% 
+  distinct(docket_id, .keep_all = TRUE)
+
+  #filter(docket_id == 104)
+  #filter(docket_id == 311192)
 
 ```
+
+```{r}
+dockets_confinement
+```
+
+
+Note that if a docket has all its offenses' `sentence_type` value missing (`NA`), the `docket_id` will not be included in `dockets_confinement`.
+
+
 ## Create covariates
 
 ### Number of a grade offenses
@@ -253,6 +266,14 @@ dockets_judges <- dispositions %>%
 dockets_judges
 ```
 
+How many dockets do not have judges?
+```{r}
+dockets %>% 
+  anti_join(dockets_judges) %>% 
+  count()
+```
+
+
 ### Indicators: court_types
 
 Take a look at different values of `court_types`
@@ -348,8 +369,17 @@ Information may be captured by judicial districts, and has missing values:
 ## Create docket dataset for analysis
 
 ```{r}
+# check initial number of dockets
+dim(dockets)
+```
+
+
+```{r}
 dockets %>% 
-  left_join()
+  left_join(dockets_grades) %>% 
+  left_join(dockets_judges) %>% 
+  left_join(dockets_prior) %>% 
+  dim()
 ```
 
 
