@@ -93,7 +93,7 @@ Unit of analysis will be `docket_id`, rather than offense,  because judges seem 
 ## Target (dependent) variables
 
 Several possible target variables:
-1. Days of confinement sentences
+1. Days of confinement sentences (`total_confinement_days` and `max_confinement_days` are defined below)
 2. Binary: confinement and non-confinement
 3. ...
 
@@ -143,14 +143,17 @@ This defendant offenses are: conspiracy, carry firearms, criminal attempt, firea
 
 _approach_ : for a `docket_id` that has multiple confinement decisions, the `days_of_confinement` is the sum of `max_period_days` for offenses, in that docket, that results in confinement. With this approach, we treat as if all sentences are executed consecutively, rather than concurrently or a combination of them. `total_confinement_days` seems to better variable name.
 
+_approach_: for a `docket_id` that has multiple confinement decisions, the `max_confinement_days` is the max of `max_period_days` for offenses, in that docket, that results in confinement. With this approach, we treat as if all sentences are executed concurrently.
+
 ```{r}
-# create total_confinement_days
+# create total_confinement_days and max_confinement_days
 dispositions %>% 
   group_by(docket_id) %>%
   mutate(confinement_days = if_else(sentence_type == "Confinement", max_period_days, 0)) %>% 
-  mutate(total_confinement_days = sum(confinement_days)) %>% 
+  mutate(total_confinement_days = sum(confinement_days),
+         max_confinement_days = max(confinement_days)) %>% 
   ungroup() %>% 
-  select(-confinement_days)
+  select(-confinement_days) 
   #filter(docket_id == 104) 
 
 ```
