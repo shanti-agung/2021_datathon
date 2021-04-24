@@ -375,13 +375,26 @@ dim(dockets)
 
 
 ```{r}
-dockets %>% 
+dockets_data <- dockets %>% 
   left_join(dockets_grades) %>% 
   left_join(dockets_judges) %>% 
   left_join(dockets_prior) %>% 
-  dim()
+  left_join(dockets_confinement) %>% 
+  mutate(age = lubridate::year(filing_date) - lubridate::year(date_of_birth)) %>% 
+  mutate(court_types_cp = if_else(str_detect(court_types, "CP"), 1, 0)) %>% 
+  mutate(court_types_mc = if_else(str_detect(court_types, "MC"), 1, 0)) %>% 
+  mutate(court_types_pac = if_else(str_detect(court_types, "PAC"), 1, 0)) %>% 
+  mutate(court_office_types_commonwealth = if_else(str_detect(court_office_types, "Commonwealth"), 1, 0)) %>% 
+  mutate(court_office_types_criminal = if_else(str_detect(court_office_types, "Criminal"), 1, 0)) %>% 
+  mutate(court_office_types_municipal = if_else(str_detect(court_office_types, "Municipal"), 1, 0)) %>% 
+  mutate(court_office_types_supreme = if_else(str_detect(court_office_types, "Supreme"), 1, 0)) %>%
+  mutate(court_office_types_suprerior = if_else(str_detect(court_office_types, "Superior"), 1, 0)) 
 ```
 
+```{r}
+# check dimension
+dim(dockets_data)
+```
 
 
 ```
