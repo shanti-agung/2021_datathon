@@ -313,16 +313,25 @@ dockets %>%
   mutate(docket_duration_days = as.numeric(difftime(disposition_date, filing_date, units = "days"))) %>% 
   count(docket_duration_days)
 ```
-
-
+Some docket_ids have duration less than 0, and many has duration 0 days. `disposition_date` may not be the proper variable to create `duration`. It should be `duration` = `termination_date` - `filing_date`. But we do not have `termination_date` variable. 
 
 ### Number of prior court appearance
 
 ```{r}
-#dockets %>%
- # left_join(dockets_defendants_ids) %>% 
-#  select(docket_id, )
+dockets_prior <- dockets %>%
+  left_join(dockets_defendants_ids) %>% 
+  select(defendant_id, docket_id, filing_date) %>% 
+  group_by(defendant_id) %>% 
+  arrange(defendant_id, filing_date) %>% 
+  mutate(tmp1 = row_number(),
+         number_prior_dockets = tmp1 - 1) %>% 
+  ungroup() %>% 
+  select(docket_id, number_prior_dockets)
 ```
+```{r}
+dockets_prior
+```
+
 
 ### Notes on covariates chosen
 Has no missing values:
