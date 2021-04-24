@@ -396,6 +396,17 @@ dockets_data <- dockets %>%
 dim(dockets_data)
 ```
 
+```{r}
+# Make sure the target file (parsed dispositios data) does not exist
+target_file <- file.path(rprojroot::find_root(rprojroot::is_rstudio_project),
+                         "data", "docket_details.csv")
+stopifnot(!file.exists(target_file))
+```
+
+```{r}
+# Write it to a new file
+readr::write_csv(dockets_data, target_file)
+```
 
 ```
 
