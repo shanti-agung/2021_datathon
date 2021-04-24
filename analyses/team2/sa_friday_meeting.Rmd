@@ -1,0 +1,54 @@
+---
+title: "meeting"
+author: "Shant"
+date: "4/23/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+dispositions %>% 
+  count(sentence_type) 
+```
+
+```{r}
+dispositions %>% 
+  count(grade_backfilled)
+```
+
+```{r}
+dispositions %>% 
+  filter(grade_backfilled == "IC")
+```
+
+```{r}
+dispositions %>% 
+  filter(!is.na(max_period_days)) %>% 
+  group_by(grade_backfilled) %>% 
+  summarise(cnt_rows = n(), min_days = min(max_period_days), mean_days = mean(max_period_days), 
+            max_days = max(max_period_days))
+```
+```{r}
+dispositions %>% 
+  filter(!is.na(max_period_days)) %>% 
+  group_by(description) %>% 
+  summarise(cnt_rows = n(), min_days = min(max_period_days), mean_days = mean(max_period_days), 
+            max_days = max(max_period_days), stdv = sd(max_period_days)) %>% 
+  write_csv("statsbydescription.csv")
+```
+
+```{r}
+dispositions %>% 
+  mutate(judge_id = group_indices(., disposing_authority__last_name,
+                                  disposing_authority__middle_name,
+                                  disposing_authority__first_name)) %>% 
+  filter(description == "Simple Assault") %>%
+  ggplot(aes(x = as.factor(judge_id), y = max_period_days)) +
+  geom_boxplot() +
+  coord_flip()
+  
+```
+

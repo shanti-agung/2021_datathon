@@ -75,6 +75,16 @@ dockets <- readr::read_csv('https://storage.googleapis.com/jat-rladies-2021-data
                        col_types = dddcols)
 ```
 
+```{r}
+ddidscols = cols(
+  defendant_id = col_double(),
+  docket_id = col_double()
+)
+
+dockets_defendants_ids <- readr::read_csv('https://storage.googleapis.com/jat-rladies-2021-datathon/defendant_docket_ids.csv',
+                                      col_types = ddidscols)
+
+```
 
 ## Unit of analysis
 
@@ -120,7 +130,7 @@ dispositions %>%
 `docket_id` number 3 has two offenses that results in confinement. Let's look closer. 
 ```{r}
 dispositions %>% 
-  filter(docket_id == 3)
+  filter(docket_id == 3) 
 ```
 `docket_id` = 3 has 3 offenses, two of them results in confinement. One for 700 days and the other for 1826 days.
 
@@ -165,7 +175,7 @@ dispositions %>%
 
 
 ```{r}
-dispositions_grades <- dispositions %>% 
+dockets_grades <- dispositions %>% 
   select(docket_id, grade_backfilled) %>% 
   filter(!is.na(grade_backfilled)) %>% 
   count(docket_id, grade_backfilled) %>% 
@@ -175,7 +185,7 @@ dispositions_grades <- dispositions %>%
 ```
 
 ```{r}
-dispositions_grades
+dockets_grades
 ```
 
 
@@ -242,18 +252,76 @@ dockets_judges
 
 ### Indicators: court_types
 
+Take a look at different values of `court_types`
 ```{r}
+dockets %>% 
+  count(court_types)
+```
 
+```{r}
+dockets %>% 
+  mutate(court_types_cp = if_else(str_detect(court_types, "CP"), 1, 0)) %>% 
+  mutate(court_types_mc = if_else(str_detect(court_types, "MC"), 1, 0)) %>% 
+  mutate(court_types_pac = if_else(str_detect(court_types, "PAC"), 1, 0)) 
+```
+
+### Indicators: court_office_types
+
+Take a look at different values of `court_office_types`
+```{r}
+dockets %>% 
+  count(court_office_types)
+```
+
+```{r}
+dockets %>% 
+  mutate(court_office_types_commonwealth = if_else(str_detect(court_office_types, "Commonwealth"), 1, 0)) %>% 
+  mutate(court_office_types_criminal = if_else(str_detect(court_office_types, "Criminal"), 1, 0)) %>% 
+  mutate(court_office_types_municipal = if_else(str_detect(court_office_types, "Municipal"), 1, 0)) %>% 
+  mutate(court_office_types_supreme = if_else(str_detect(court_office_types, "Supreme"), 1, 0)) %>%
+  mutate(court_office_types_suprerior = if_else(str_detect(court_office_types, "Superior"), 1, 0)) 
 ```
 
 
-## Check for other covariates
+### Indicators: representation_type
 
 ```{r}
 dockets %>% 
   count(representation_type)
 ```
 
+### Defendant Age
+
+```{r}
+dockets %>% 
+  mutate(age = lubridate::year(filing_date) - lubridate::year(date_of_birth))
+```
+
+### Case duration
+
+```{r}
+dockets %>% 
+  mutate(duration = difftime(disposition_date, filing_date, units = "days")) %>% 
+  count(duration)
+```
+
+```{r}
+dockets %>% 
+  mutate(docket_duration_days = as.numeric(difftime(disposition_date, filing_date, units = "days"))) %>% 
+  count(docket_duration_days)
+```
+
+
+
+### Number of prior court appearance
+
+```{r}
+#dockets %>%
+ # left_join(dockets_defendants_ids) %>% 
+#  select(docket_id, )
+```
+
+### Notes on covariates chosen
 Has no missing values:
 * `court_types` 
 * `judicial_districts`
@@ -263,6 +331,14 @@ Has no missing values:
 Information may be captured by judicial districts, and has missing values:
 * `municipality_name`
 * `municipality__county__name`
+
+
+## Create docket dataset for analysis
+
+```{r}
+dockets %>% 
+  left_join()
+```
 
 
 
