@@ -145,13 +145,21 @@ _approach_ : for a `docket_id` that has multiple confinement decisions, the `day
 
 _approach_: for a `docket_id` that has multiple confinement decisions, the `max_confinement_days` is the max of `max_period_days` for offenses, in that docket, that results in confinement. With this approach, we treat as if all sentences are executed concurrently.
 
-_assumption_: for now, "life" sentence is treated as confinement of 90 years. Where 1 year = 365.2425 (as calculated in ec_sentence_period.Rmd)
+_assumption_: for now, "life" sentence is treated as confinement of 90 years, regardless whether the sentence is life with or without parole. 1 year = 365.2425 (as calculated in ec_sentence_period.Rmd).
+
+Other exclusion, for now:
+* We use dockets that the value of `credit` is missing and the value of `max_period_parsed` does not include "time_served" (otherwise, these observations have -Inf as their `max_period_days`)
+* We use dockets that the value of `max_period_parsed` is not "other" (otherwise, these observations have -Inf as their `max_period_days`)
+* We use dockets that the value of `max_period_parsed` is not "death penalty imposed" (otherwise, these observations have -Inf as their `max_period_days`). There are only two docket_ids receiving this sentence.
 
 ```{r}
 # create total_confinement_days and max_confinement_days
 dockets_confinement <- dispositions %>% 
   filter(!is.na(sentence_type)) %>%
-  mutate(max_period_days = if_else(max_period_parsed == "life", (90*365.2425),
+  filter(!(str_detect(max_period_parsed, "time_served") & is.na(credit))) %>% 
+  filter(max_period_parsed != "other") %>% 
+  filter(max_period_parsed != "death penalty imposed") %>% 
+  mutate(max_period_days = if_else(str_detect(max_period_parsed, "life"), (90*365.2425),
                                    max_period_days)) %>% 
   group_by(docket_id) %>%
   mutate(confinement_days = if_else(sentence_type == "Confinement", max_period_days, 0)) %>% 
@@ -161,16 +169,13 @@ dockets_confinement <- dispositions %>%
   select(docket_id, total_confinement_days, max_confinement_days) %>% 
   distinct(docket_id, .keep_all = TRUE)
 
-  #filter(docket_id == 104)
-  #filter(docket_id == 311192)
 
 ```
 
 
 ```{r}
-dockets_confinement
+dockets_confinement 
 ```
-
 
 Note that if a docket has all its offenses' `sentence_type` value missing (`NA`), the `docket_id` will not be included in `dockets_confinement`.
 

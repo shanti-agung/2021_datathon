@@ -90,6 +90,7 @@ Subset data based on:
 * status_name: use dockets that have status of "Closed" and "Adjudicated" (exclude: "Active" and "Inactive")
 * judge_id: use dockets that have non missing values in `judge_id` (exclude dockets that have missing values in judge names)
 
+
 ```{r}
 dockets <- dockets %>% 
   mutate(year = lubridate::year(filing_date),
@@ -206,7 +207,7 @@ dockets %>%
 
 ```{r}
 dispositions %>% 
-  filter(docket_id == 200075)
+  filter(docket_id == 173745)
 ```
 
 ```{r}
