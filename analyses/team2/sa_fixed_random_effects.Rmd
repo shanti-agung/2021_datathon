@@ -9,29 +9,216 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-This notebook is an attempt to model judge harshness using fixed and random effect models.
+This notebook is an attempt to model judge harshness using random effects model.
 
 ```{r}
 library(tidyverse)
 ```
 
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r}
+# Make sure the source file (raw dispositions data) exists
+source_file <- file.path(rprojroot::find_root(rprojroot::is_rstudio_project),
+                         "data", "docket_details.csv")
+stopifnot(file.exists(source_file))
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
+```{r}
+# load dataset
+ddcols = cols(
+  docket_id = col_double(),
+  gender = col_character(),
+  race = col_character(),
+  date_of_birth = col_date(format = ""),
+  arrest_date = col_date(format = ""),
+  complaint_date = col_date(format = ""),
+  disposition_date = col_date(format = ""),
+  filing_date = col_date(format = ""),
+  initiation_date = col_date(format = ""),
+  status_name = col_character(),
+  court_office__court__display_name = col_character(),
+  current_processing_status__processing_status = col_character(),
+  current_processing_status__status_change_datetime = col_date(format = ""),
+  municipality__name = col_character(),
+  municipality__county__name = col_character(),
+  judicial_districts = col_character(),
+  court_office_types = col_character(),
+  court_types = col_character(),
+  representation_type = col_character(),
+  M = col_double(),
+  M3 = col_double(),
+  F1 = col_double(),
+  F3 = col_double(),
+  F2 = col_double(),
+  M1 = col_double(),
+  M2 = col_double(),
+  S = col_double(),
+  `F` = col_double(),
+  IC = col_double(),
+  H2 = col_double(),
+  H1 = col_double(),
+  S2 = col_double(),
+  S1 = col_double(),
+  S3 = col_double(),
+  judge_id = col_double(),
+  disposing_authority__first_name = col_character(),
+  disposing_authority__middle_name = col_character(),
+  disposing_authority__last_name = col_character(),
+  number_prior_dockets = col_double(),
+  total_confinement_days = col_double(),
+  max_confinement_days = col_double(),
+  age = col_double(),
+  court_types_cp = col_double(),
+  court_types_mc = col_double(),
+  court_types_pac = col_double(),
+  court_office_types_commonwealth = col_double(),
+  court_office_types_criminal = col_double(),
+  court_office_types_municipal = col_double(),
+  court_office_types_supreme = col_double(),
+  court_office_types_suprerior = col_double()
+)
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+dockets <- readr::read_csv(source_file, col_types = ddcols)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+## Subset data
+
+Subset data based on:
+* year: use dockets that are filed prior to 2020 (year 2010 - 2019)
+* status_name: use dockets that have status of "Closed" and "Adjudicated" (exclude: "Active" and "Inactive")
+* judge_id: use dockets that have non missing values in `judge_id` (exclude dockets that have missing values in judge names)
+
+```{r}
+dockets <- dockets %>% 
+  mutate(year = lubridate::year(filing_date),
+         month = lubridate::month(filing_date, label = TRUE, abbr = TRUE)) %>% 
+  filter(year < 2020) %>% 
+  filter(status_name %in% c("Closed", "Adjudicated")) %>% 
+  filter(!is.na(judge_id))
+```
+
+## EDA on the subset data
+
+### cases
+Number of closed and adjudicated cases from 2010 to 2019
+```{r}
+dockets %>% 
+  ggplot(aes(x = as.factor(year))) +
+  geom_bar(aes(fill = status_name), position = "dodge")
+```
+Very few Adjudicated cases.
+
+```{r}
+dockets %>% 
+  count(status_name)
+```
+### judges
+
+How many judges are there?
+```{r}
+dockets %>% 
+  distinct(judge_id) %>% 
+  count()
+```
+
+Number of judges in each year
+```{r}
+dockets %>% 
+  distinct(judge_id, year) %>% 
+  ggplot(aes(x = as.factor(year))) +
+  geom_bar()
+```
+
+Number of cases per judge
+```{r}
+dockets %>% 
+  count(judge_id) %>% 
+  ggplot(aes(x = n)) +
+  geom_histogram(binwidth = 200)
+```
+`n` in the above plot is the number of cases that a judge handles within the 2010-219 period. What is the few observations with n > 15000?
+
+```{r}
+dockets %>% 
+  count(judge_id) %>% 
+  rename(num_cases = n) %>% 
+  arrange(num_cases) %>% 
+  count(num_cases) %>% 
+  rename(num_judge_ids = n) %>%
+  arrange(num_cases)
+  
+```
+
+```{r}
+dockets %>% 
+  count(judge_id) %>% 
+  filter(n > 15000)
+```
+
+`judge_id` == 111 has 18017 cases
+
+```{r}
+dockets %>%
+  filter(judge_id == 111) %>% 
+  select(disposing_authority__last_name, disposing_authority__first_name, disposing_authority__middle_name)
+```
+
+### total confinement days
+
+Are there missing values?
+```{r}
+dockets %>% 
+  filter(is.na(total_confinement_days)) %>% count()
+```
+
+How does the distribution of `total_confinement_days` look like?
+```{r}
+dockets %>% 
+  ggplot(aes(x = total_confinement_days)) +
+  geom_histogram(binwidth = 500)
+```
+
+```{r}
+dockets %>% 
+  ggplot(aes(x = total_confinement_days)) +
+  geom_histogram(binwidth = 500) +
+  coord_cartesian(ylim = c(0,100))
+```
+### max confinement days
+
+Are there dockets with missing values in `max_confinement_days`?
+```{r}
+dockets %>% 
+  filter(is.na(max_confinement_days)) %>% 
+  count()
+```
+
+```{r}
+dockets %>% 
+  filter(max_confinement_days == -Inf) %>% 
+  select(docket_id, total_confinement_days, max_confinement_days) 
+  #count(total_confinement_days)
+  #count(max_confinement_days)
+  #arrange((max_confinement_days))
+```
+
+```{r}
+dispositions %>% 
+  filter(docket_id == 200075)
+```
+
+```{r}
+dispositions %>% 
+  filter(max_period_parsed == "life")
+```
+
+
+How does the distribution of `max_confinement_days` look like?
+```{r}
+dockets %>% 
+  ggplot(aes(x = max_confinement_days)) +
+  geom_histogram()
+```
+
