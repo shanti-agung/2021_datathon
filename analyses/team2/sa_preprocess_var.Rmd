@@ -145,10 +145,14 @@ _approach_ : for a `docket_id` that has multiple confinement decisions, the `day
 
 _approach_: for a `docket_id` that has multiple confinement decisions, the `max_confinement_days` is the max of `max_period_days` for offenses, in that docket, that results in confinement. With this approach, we treat as if all sentences are executed concurrently.
 
+_assumption_: for now, "life" sentence is treated as confinement of 90 years. Where 1 year = 365.2425 (as calculated in ec_sentence_period.Rmd)
+
 ```{r}
 # create total_confinement_days and max_confinement_days
 dockets_confinement <- dispositions %>% 
-  filter(!is.na(sentence_type)) %>% 
+  filter(!is.na(sentence_type)) %>%
+  mutate(max_period_days = if_else(max_period_parsed == "life", (90*365.2425),
+                                   max_period_days)) %>% 
   group_by(docket_id) %>%
   mutate(confinement_days = if_else(sentence_type == "Confinement", max_period_days, 0)) %>% 
   mutate(total_confinement_days = sum(confinement_days, na.rm = TRUE),
@@ -161,6 +165,7 @@ dockets_confinement <- dispositions %>%
   #filter(docket_id == 311192)
 
 ```
+
 
 ```{r}
 dockets_confinement
