@@ -17,7 +17,7 @@ library(tidyverse)
 
 
 ```{r}
-# Make sure the source file (raw dispositions data) exists
+# Make sure the source file (docket details data) exists
 source_file <- file.path(rprojroot::find_root(rprojroot::is_rstudio_project),
                          "data", "docket_details.csv")
 stopifnot(file.exists(source_file))
