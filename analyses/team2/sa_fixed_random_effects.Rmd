@@ -101,6 +101,47 @@ dockets <- dockets %>%
   filter(!is.na(total_confinement_days))
 ```
 
+Subset variables for analysis.
+```{r}
+dockets_data <- dockets[,c("total_confinement_days", "max_confinement_days", "gender", "age",
+                   "race","number_prior_dockets", "M", "M1", "M2", "M3",
+                   "F", "F1", "F2", "F3", "S", "S1", "S2", "S3", "IC", "H1", "H2",
+                   "court_types_cp", "court_types_mc", "court_types_pac", "year", "month",
+                   "judge_id")]
+```
+
+### Tidy variables
+
+```{r}
+glimpse(dockets_data)
+```
+
+Recode `gender`, `race`, `judge_id`, `court_types_cp`, `court_types_mc`, and `court_types_pac` into factors.
+
+```{r}
+gender_levels <- c("Female", "Male")
+race_levels <- c("Asian", "Asian/Pacific Islander", "Bi-Racial", "Black",
+                 "Native American/Alaskan Native", "Unknown/Unreported",
+                 "White")
+
+dockets_data <- dockets_data %>% 
+  mutate(gender = factor(gender, level = gender_levels),
+         race = factor(race, level = race_levels),
+         court_types_cp = factor(court_types_cp),
+         court_types_mc = factor(court_types_mc),
+         court_types_pac = factor(court_types_pac),
+         judge_id = factor(judge_id),
+         year = factor(year, ordered = TRUE))
+
+
+```
+
+
+```{r}
+glimpse(dockets_data)
+```
+
+
 ## EDA on the subset data
 
 ### cases
@@ -204,4 +245,59 @@ dockets %>%
   ggplot(aes(x = max_confinement_days)) +
   geom_histogram(binwidth = 250)
 ```
+## Random Effects Model
+
+```{r}
+library(lme4)
+```
+
+### Total confinement days
+
+#### Intercept model
+```{r}
+judge_total_intercept_model <- lmer(total_confinement_days ~ 1 + (1 | judge_id), dockets)
+
+```
+
+```{r}
+summary(judge_total_intercept_model)
+```
+The estimated fixed effects of 1488.0 is the average `total_confinement_days` across judges.
+
+Get the estimated intercept of each judge
+```{r}
+ranef(judge_total_intercept_model)$judge_id 
+```
+
+```{r}
+ranef(judge_total_intercept_model)
+
+```
+
+#### full model
+
+judge_total_intercept_model <- lmer(total_confinement_days ~ 1 + (1 | judge_id), dockets)
+
+```{r}
+judge_total_full_model <- lmer(total_confinement_days ~ 1 + gender + race + age +
+                                 number_prior_dockets + M + M1 + M2 + M3 + `F` + F1 + F2 +
+                                 F3 + S + S1 + S2 + S3 + IC + H1 + H2 + court_types_cp +
+                                 court_types_mc + court_types_pac + year + month +
+                                 (1 + gender + race + age +
+                                 number_prior_dockets + M + M1 + M2 + M3 + `F` + F1 + F2 +
+                                 F3 + S + S1 + S2 + S3 + IC + H1 + H2 | judge_id), dockets)
+```
+"Some predictor variables are on very different scales: consider rescaling"
+
+```{r}
+summary(dockets[,c("total_confinement_days", "max_confinement_days", "gender", "age",
+                   "race","number_prior_dockets", "M", "M1", "M2", "M3",
+                   "F", "F1", "F2", "F3", "S", "S1", "S2", "S3", "IC", "H1", "H2",
+                   "court_types_cp", "court_types_mc", "court_types_pac", "year", "month",
+                   "judge_id")])
+```
+
+turn into factor:
+* gender
+* race
 
