@@ -407,7 +407,7 @@ dim(dockets_data)
 ```
 
 ```{r}
-# Make sure the target file (parsed dispositios data) does not exist
+# Make sure the target file (docket details data) does not exist
 target_file <- file.path(rprojroot::find_root(rprojroot::is_rstudio_project),
                          "data", "docket_details.csv")
 stopifnot(!file.exists(target_file))
