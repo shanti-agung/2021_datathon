@@ -156,9 +156,12 @@ Other exclusion, for now:
 # create total_confinement_days and max_confinement_days
 dockets_confinement <- dispositions %>% 
   filter(!is.na(sentence_type)) %>%
-  filter(!(str_detect(max_period_parsed, "time_served") & is.na(credit))) %>% 
-  filter(max_period_parsed != "other") %>% 
-  filter(max_period_parsed != "death penalty imposed") %>% 
+  mutate(has_time_served = str_detect(max_period_parsed, "time_served"),
+         missing_credit = is.na(credit),
+         has_max_period_parsed = !is.na(max_period_parsed)) %>% 
+  filter(!(has_max_period_parsed & has_time_served & missing_credit)) %>% 
+  filter((!has_max_period_parsed) | (max_period_parsed != "other")) %>% 
+  filter((!has_max_period_parsed) | (max_period_parsed != "death penalty imposed")) %>% 
   mutate(max_period_days = if_else(str_detect(max_period_parsed, "life"), (90*365.2425),
                                    max_period_days)) %>% 
   group_by(docket_id) %>%
@@ -420,41 +423,28 @@ readr::write_csv(dockets_data, target_file)
 
 
 ```{r}
-dockets_subset <- dockets_data %>% 
-  mutate(year = lubridate::year(filing_date),
-         month = lubridate::month(filing_date, label = TRUE, abbr = TRUE)) %>% 
-  filter(year < 2020) %>% 
-  filter(status_name %in% c("Closed", "Adjudicated")) %>% 
-  filter(!is.na(judge_id))
-```
-
-```{r}
-dockets_subset %>% 
-  filter(is.na(total_confinement_days))
-```
-
-```{r}
-dispositions %>% 
-  filter(docket_id == 94842)
-```
-
-```{r}
 dispositions %>% 
   filter(!is.na(sentence_type)) %>%
-  filter(!(str_detect(max_period_parsed, "time_served") & is.na(credit))) %>% 
-  filter(docket_id == 94842)
-  # filter(max_period_parsed != "other") %>% 
-  # filter(max_period_parsed != "death penalty imposed") %>% 
-  # mutate(max_period_days = if_else(str_detect(max_period_parsed, "life"), (90*365.2425),
-  #                                  max_period_days)) %>% 
-  # group_by(docket_id) %>%
-  # mutate(confinement_days = if_else(sentence_type == "Confinement", max_period_days, 0)) %>% 
-  # mutate(total_confinement_days = sum(confinement_days, na.rm = TRUE),
-  #        max_confinement_days = max(confinement_days, na.rm = TRUE)) %>% 
-  # ungroup() %>% 
-  # select(docket_id, total_confinement_days, max_confinement_days) %>% 
-  # distinct(docket_id, .keep_all = TRUE)
+  mutate(has_time_served = str_detect(max_period_parsed, "time_served"),
+         missing_credit = is.na(credit),
+         has_max_period_parsed = !is.na(max_period_parsed)) %>% 
+  filter(!(has_max_period_parsed &has_time_served & missing_credit)) %>% 
+  filter((!has_max_period_parsed) | (max_period_parsed != "other")) %>% 
+  filter((!has_max_period_parsed) | (max_period_parsed != "death penalty imposed")) %>% 
+  mutate(max_period_days = if_else(str_detect(max_period_parsed, "life"), (90*365.2425),
+                                   max_period_days)) %>%
+  group_by(docket_id) %>%
+  mutate(confinement_days = if_else(sentence_type == "Confinement", max_period_days, 0)) %>%
+  mutate(total_confinement_days = sum(confinement_days, na.rm = TRUE),
+         max_confinement_days = max(confinement_days, na.rm = TRUE)) %>%
+  ungroup() %>%
+  select(docket_id, total_confinement_days, max_confinement_days) %>%
+  distinct(docket_id, .keep_all = TRUE) %>%
+  filter(docket_id == 35657)
 ```
+
+
+
 
 
 ```

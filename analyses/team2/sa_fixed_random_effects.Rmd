@@ -97,7 +97,8 @@ dockets <- dockets %>%
          month = lubridate::month(filing_date, label = TRUE, abbr = TRUE)) %>% 
   filter(year < 2020) %>% 
   filter(status_name %in% c("Closed", "Adjudicated")) %>% 
-  filter(!is.na(judge_id))
+  filter(!is.na(judge_id)) %>% 
+  filter(!is.na(total_confinement_days))
 ```
 
 ## EDA on the subset data
