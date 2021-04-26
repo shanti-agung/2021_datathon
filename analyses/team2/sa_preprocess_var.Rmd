@@ -422,29 +422,6 @@ readr::write_csv(dockets_data, target_file)
 ```
 
 
-```{r}
-dispositions %>% 
-  filter(!is.na(sentence_type)) %>%
-  mutate(has_time_served = str_detect(max_period_parsed, "time_served"),
-         missing_credit = is.na(credit),
-         has_max_period_parsed = !is.na(max_period_parsed)) %>% 
-  filter(!(has_max_period_parsed &has_time_served & missing_credit)) %>% 
-  filter((!has_max_period_parsed) | (max_period_parsed != "other")) %>% 
-  filter((!has_max_period_parsed) | (max_period_parsed != "death penalty imposed")) %>% 
-  mutate(max_period_days = if_else(str_detect(max_period_parsed, "life"), (90*365.2425),
-                                   max_period_days)) %>%
-  group_by(docket_id) %>%
-  mutate(confinement_days = if_else(sentence_type == "Confinement", max_period_days, 0)) %>%
-  mutate(total_confinement_days = sum(confinement_days, na.rm = TRUE),
-         max_confinement_days = max(confinement_days, na.rm = TRUE)) %>%
-  ungroup() %>%
-  select(docket_id, total_confinement_days, max_confinement_days) %>%
-  distinct(docket_id, .keep_all = TRUE) %>%
-  filter(docket_id == 35657)
-```
-
-
-
 
 
 ```
