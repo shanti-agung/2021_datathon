@@ -197,30 +197,11 @@ dockets %>%
   count()
 ```
 
-```{r}
-dockets %>% 
-  filter(max_confinement_days == -Inf) %>% 
-  select(docket_id, total_confinement_days, max_confinement_days) 
-  #count(total_confinement_days)
-  #count(max_confinement_days)
-  #arrange((max_confinement_days))
-```
-
-```{r}
-dispositions %>% 
-  filter(docket_id == 173745)
-```
-
-```{r}
-dispositions %>% 
-  filter(max_period_parsed == "life")
-```
-
 
 How does the distribution of `max_confinement_days` look like?
 ```{r}
 dockets %>% 
   ggplot(aes(x = max_confinement_days)) +
-  geom_histogram()
+  geom_histogram(binwidth = 250)
 ```
 
