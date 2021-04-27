@@ -506,8 +506,14 @@ judge_intercepts_mod08 %>%
 
 ```{r}
 judge_intercepts_mod08 %>% 
-  rename(judge_intercept = `(Intercept)`) %>% 
   arrange(desc(judge_intercept))
+```
+
+```{r}
+dockets %>% 
+  filter(judge_id == 20) %>% 
+  select(disposing_authority__last_name, disposing_authority__first_name,
+         disposing_authority__middle_name)
 ```
 
 
@@ -561,12 +567,14 @@ judge_max_model_08 <- lmer(max_confinement_days ~ 1 + gender + race + log(age) +
 
 
 ```{r}
-judge_intercepts_mod08_max <- tibble(ranef(judge_total_model_08)$judge_id) 
+judge_intercepts_mod08_max <- tibble(ranef(judge_max_model_08)$judge_id) %>%
+  rename(judge_intercept = `(Intercept)`) %>% 
+  mutate(judge_id = row_number())
+
 ```
 
 ```{r}
 judge_intercepts_mod08_max %>% 
-  rename(judge_intercept = `(Intercept)`) %>% 
   ggplot(aes(x = judge_intercept)) +
   geom_histogram(binwidth = 250, fill = "#88398A") +
   theme_bw() +
@@ -577,4 +585,10 @@ judge_intercepts_mod08_max %>%
     panel.grid.minor = element_blank()
   )
 ```
+
+```{r}
+judge_intercepts_mod08_max %>% 
+  arrange(desc(judge_intercept))
+```
+
 
