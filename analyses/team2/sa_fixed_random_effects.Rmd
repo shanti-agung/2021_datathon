@@ -497,7 +497,7 @@ judge_intercepts_mod08 %>%
   geom_histogram(binwidth = 250, fill = "#88398A") +
   theme_bw() +
   labs(title = "Judge intercept estimates of random coefficient model",
-       subtitle = "Outcome variable: Total confinement days",
+       subtitle = "Outcome variable: Docket total days of confinement",
        x = "judge intercept") +
   theme(
     panel.grid.minor = element_blank()
@@ -579,7 +579,7 @@ judge_intercepts_mod08_max %>%
   geom_histogram(binwidth = 250, fill = "#88398A") +
   theme_bw() +
   labs(title = "Judge intercept estimates of random coefficient model",
-       subtitle = "Outcome variable: Max confinement days",
+       subtitle = "Outcome variable: Docket max days of confinement",
        x = "judge intercept") +
   theme(
     panel.grid.minor = element_blank()
