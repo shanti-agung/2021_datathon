@@ -103,12 +103,19 @@ dockets <- dockets %>%
 
 Subset variables for analysis.
 ```{r}
-dockets_data <- dockets[,c("total_confinement_days", "max_confinement_days", "gender", "age",
-                   "race","number_prior_dockets", "M", "M1", "M2", "M3",
-                   "F", "F1", "F2", "F3", "S", "S1", "S2", "S3", "IC", "H1", "H2",
-                   "court_types_cp", "court_types_mc", "court_types_pac", "year", "month",
-                   "judge_id")]
+dockets_data <- dockets[,c("docket_id", "total_confinement_days", "max_confinement_days",
+                           "gender", "age","race","number_prior_dockets", "M", "M1", "M2", "M3",
+                           "F", "F1", "F2", "F3", "S", "S1", "S2", "S3", "IC", "H1", "H2",
+                           "court_types_cp", "court_types_mc", "court_types_pac", "year", "month",
+                           "judge_id")]
 ```
+
+For now, drop observations with any missing data.
+
+```{r}
+dockets_data <- na.omit(dockets_data)
+```
+
 
 ### Tidy variables
 
@@ -132,7 +139,6 @@ dockets_data <- dockets_data %>%
          court_types_pac = factor(court_types_pac),
          judge_id = factor(judge_id),
          year = factor(year, ordered = TRUE))
-
 
 ```
 
@@ -161,22 +167,22 @@ dockets %>%
 
 How many judges are there?
 ```{r}
-dockets %>% 
+dockets_data %>% 
   distinct(judge_id) %>% 
   count()
 ```
 
 Number of judges in each year
 ```{r}
-dockets %>% 
+dockets_data %>% 
   distinct(judge_id, year) %>% 
-  ggplot(aes(x = as.factor(year))) +
+  ggplot(aes(x = year)) +
   geom_bar()
 ```
 
 Number of cases per judge
 ```{r}
-dockets %>% 
+dockets_data %>% 
   count(judge_id) %>% 
   ggplot(aes(x = n)) +
   geom_histogram(binwidth = 200)
@@ -184,7 +190,7 @@ dockets %>%
 `n` in the above plot is the number of cases that a judge handles within the 2010-219 period. What is the few observations with n > 15000?
 
 ```{r}
-dockets %>% 
+dockets_data %>% 
   count(judge_id) %>% 
   rename(num_cases = n) %>% 
   arrange(num_cases) %>% 
@@ -195,7 +201,7 @@ dockets %>%
 ```
 
 ```{r}
-dockets %>% 
+dockets_data %>% 
   count(judge_id) %>% 
   filter(n > 15000)
 ```
@@ -210,52 +216,122 @@ dockets %>%
 
 ### total confinement days
 
-Are there missing values?
-```{r}
-dockets %>% 
-  filter(is.na(total_confinement_days)) %>% count()
-```
-
 How does the distribution of `total_confinement_days` look like?
 ```{r}
-dockets %>% 
+dockets_data %>% 
   ggplot(aes(x = total_confinement_days)) +
-  geom_histogram(binwidth = 500)
+  geom_histogram(binwidth = 700)
 ```
 
 ```{r}
-dockets %>% 
+dockets_data %>% 
   ggplot(aes(x = total_confinement_days)) +
   geom_histogram(binwidth = 500) +
   coord_cartesian(ylim = c(0,100))
 ```
 ### max confinement days
 
-Are there dockets with missing values in `max_confinement_days`?
-```{r}
-dockets %>% 
-  filter(is.na(max_confinement_days)) %>% 
-  count()
-```
-
 
 How does the distribution of `max_confinement_days` look like?
 ```{r}
-dockets %>% 
+dockets_data %>% 
   ggplot(aes(x = max_confinement_days)) +
   geom_histogram(binwidth = 250)
 ```
+
+### Age
+
+```{r}
+summary(dockets_data$age)
+```
+
+Some dockets have missing values for age, and the min age -1, uh-oh...
+
+```{r}
+dockets_data %>% 
+  arrange(age)
+```
+
+Three docket_ids have defendant that are less than 3 years old. Looking at dockets' original (raw) dataset, these entries seem to be data entry typo.
+
+```{r}
+dockets_data %>%
+  filter(age > 10) %>% 
+  ggplot(aes(x = age)) +
+  geom_histogram(binwidth = 4)
+```
+```{r}
+dockets_data %>%
+  filter(age > 10) %>% 
+  ggplot(aes(x = log(age))) +
+  geom_histogram()
+```
+
+### number_prior_dockets
+
+```{r}
+summary(dockets_data$number_prior_dockets)
+```
+
+```{r}
+dockets_data %>% 
+  ggplot(aes(x = number_prior_dockets)) +
+  geom_histogram(binwidth = 3)
+```
+
+```{r}
+dockets_data %>% 
+  ggplot(aes(x = number_prior_dockets)) +
+  geom_histogram(binwidth = 3) +
+  coord_cartesian(ylim = c(0, 2700))
+```
+### grade offenses
+```{r}
+summary(dockets_data$M1)
+```
+
+```{r}
+dockets_data %>% 
+  ggplot(aes(x = M1)) +
+  geom_histogram(binwidth = 3)
+```
+
+
+## Tidy variables again
+
+```{r}
+dockets_data <- dockets_data %>% 
+  filter(age > 10) %>%  # drop dockets with defendants' age < 10 years
+  mutate(number_prior_dockets_scaled = scale(number_prior_dockets),
+         grade_M_scaled = scale(M),
+         grade_M1_scaled = scale(M1),
+         grade_M2_scaled = scale(M2),
+         grade_M3_scaled = scale(M3),
+         grade_F_scaled = scale(`F`),
+         grade_F1_scaled = scale(F1),
+         grade_F2_scaled = scale(F2),
+         grade_F3_scaled = scale(F3),
+         grade_S_scaled = scale(S),
+         grade_S1_scaled = scale(S1),
+         grade_S2_scaled = scale(S2),
+         grade_S3_scaled = scale(S3),
+         grade_IC_scaled = scale(IC),
+         grade_H1_scaled = scale(H1),
+         grade_H2_scaled = scale(H2)
+         )
+```
+
+
 ## Random Effects Model
 
 ```{r}
 library(lme4)
 ```
 
-### Total confinement days
+### Dependent variable: Total confinement days
 
-#### Intercept model
 ```{r}
-judge_total_intercept_model <- lmer(total_confinement_days ~ 1 + (1 | judge_id), dockets)
+judge_total_intercept_model <- lmer(total_confinement_days ~ 1 + (1 | judge_id), dockets_data)
 
 ```
 
@@ -274,30 +350,135 @@ ranef(judge_total_intercept_model)
 
 ```
 
-#### full model
-
-judge_total_intercept_model <- lmer(total_confinement_days ~ 1 + (1 | judge_id), dockets)
 
 ```{r}
-judge_total_full_model <- lmer(total_confinement_days ~ 1 + gender + race + age +
+judge_total_model_01 <- lmer(total_confinement_days ~ 1 + gender + race + log(age) +
+                               number_prior_dockets_scaled +
+                               (1 + number_prior_dockets_scaled | judge_id), dockets_data)
+```
+
+```{r}
+judge_total_model_02 <- lmer(total_confinement_days ~ 1 + gender + race + log(age) +
+                               number_prior_dockets_scaled +
+                               (1 + gender + number_prior_dockets_scaled | judge_id), dockets_data)
+```
+
+```{r}
+# this one takes forever and doesn't give output
+judge_total_model_03 <- lmer(total_confinement_days ~ 1 + gender + race + log(age) +
+                               number_prior_dockets_scaled +
+                               (1 + gender + race +
+                                  number_prior_dockets_scaled | judge_id), dockets_data)
+```
+
+
+```{r}
+# this one takes forever and doesn't give output
+judge_total_model_04 <- lmer(total_confinement_days ~ 1 + gender + race + log(age) +
+                               number_prior_dockets_scaled +
+                               (1 + race + number_prior_dockets_scaled | judge_id), dockets_data)
+```
+```{r}
+judge_total_model_05 <- lmer(total_confinement_days ~ 1 + gender + race + log(age) +
+                               number_prior_dockets_scaled + grade_M_scaled + grade_M1_scaled +
+                               grade_M2_scaled + grade_M3_scaled + grade_F_scaled +
+                               grade_F1_scaled + grade_F2_scaled + grade_F3_scaled +
+                               grade_S_scaled + grade_S1_scaled + grade_S2_scaled +
+                               grade_S3_scaled + grade_IC_scaled + grade_H1_scaled +
+                               court_types_cp + court_types_mc + court_types_pac +
+                               year + month +
+                               (1 | judge_id), dockets_data)
+```
+
+```{r}
+judge_total_model_06 <- lmer(total_confinement_days ~ 1 + gender + race + log(age) +
+                               number_prior_dockets_scaled + M + M1 +
+                               M2 + M3 + `F` +
+                               F1 + F2 + F3 +
+                               S + S1 + S2 +
+                               S3 + IC + H1 +
+                               court_types_cp + court_types_mc + court_types_pac +
+                               year + month +
+                               (1 | judge_id), dockets_data)
+```
+
+Model 07:
+*Level 1* $$\text{total_confinement_days}_{ij} = \beta_{0j} + \beta_{1}X_{1} + \dots + \beta_{41}X_{41} + e_{ij}$$
+
+*Level 2* $$\beta_{0j} = \beta_{0} + u_{0j}$$
+
+where $j  = \text{judge_id}$ and $X$s are the covariates.
+
+```{r}
+judge_total_model_07 <- lmer(total_confinement_days ~ 1 + gender + race + log(age) +
+                               number_prior_dockets + M + M1 +
+                               M2 + M3 + `F` +
+                               F1 + F2 + F3 +
+                               S + S1 + S2 +
+                               S3 + IC + H1 +
+                               court_types_cp + court_types_mc + court_types_pac +
+                               year + month +
+                               (1 | judge_id), dockets_data)
+```
+
+```{r}
+summary(judge_total_model_07)
+```
+
+```{r}
+judge_effects <- ranef(judge_total_model_07)$judge_id 
+```
+
+```{r}
+judge_effects <- tibble(judge_effects)
+
+
+
+```
+
+
+```{r}
+judge_effects %>% 
+  rename(jeffect = `(Intercept)`) %>% 
+  ggplot(aes(x = jeffect)) +
+  geom_histogram()
+```
+
+
+```{r}
+# this one takes forever and doesn't give output
+judge_total_full_model <- lmer(total_confinement_days ~ 1 + gender + race + log(age) +
                                  number_prior_dockets + M + M1 + M2 + M3 + `F` + F1 + F2 +
                                  F3 + S + S1 + S2 + S3 + IC + H1 + H2 + court_types_cp +
                                  court_types_mc + court_types_pac + year + month +
                                  (1 + gender + race + age +
-                                 number_prior_dockets + M + M1 + M2 + M3 + `F` + F1 + F2 +
-                                 F3 + S + S1 + S2 + S3 + IC + H1 + H2 | judge_id), dockets)
+                                 number_prior_dockets_scaled + M + M1 + M2 + M3 + `F` + F1 + F2 +
+                                 F3 + S + S1 + S2 + S3 + IC + H1 + H2 | judge_id), dockets_data)
 ```
-"Some predictor variables are on very different scales: consider rescaling"
+
+### Dependent variable: Max confinement days
 
 ```{r}
-summary(dockets[,c("total_confinement_days", "max_confinement_days", "gender", "age",
-                   "race","number_prior_dockets", "M", "M1", "M2", "M3",
-                   "F", "F1", "F2", "F3", "S", "S1", "S2", "S3", "IC", "H1", "H2",
-                   "court_types_cp", "court_types_mc", "court_types_pac", "year", "month",
-                   "judge_id")])
+judge_max_intercept_model <- lmer(max_confinement_days ~ 1 + (1 | judge_id), dockets_data)
 ```
 
-turn into factor:
-* gender
-* race
+```{r}
+ranef(judge_max_intercept_model)$judge_id 
+```
+
+```{r}
+judge_max_model_07 <- lmer(max_confinement_days ~ 1 + gender + race + log(age) +
+                               number_prior_dockets + M + M1 +
+                               M2 + M3 + `F` +
+                               F1 + F2 + F3 +
+                               S + S1 + S2 +
+                               S3 + IC + H1 +
+                               court_types_cp + court_types_mc + court_types_pac +
+                               year + month +
+                               (1 | judge_id), dockets_data)
+```
+
+```{r}
+ranef(judge_max_model_07)$judge_id 
+```
 
