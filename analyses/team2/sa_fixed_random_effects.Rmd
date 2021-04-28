@@ -505,6 +505,11 @@ judge_intercepts_mod08 %>%
 ```
 
 ```{r}
+summary(judge_intercepts_mod08$judge_intercept)
+```
+
+
+```{r}
 judge_intercepts_mod08 %>% 
   arrange(desc(judge_intercept))
 ```
