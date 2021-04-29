@@ -496,9 +496,9 @@ judge_intercepts_mod08 %>%
   ggplot(aes(x = judge_intercept)) +
   geom_histogram(binwidth = 250, fill = "#88398A") +
   theme_bw() +
-  labs(title = "Judge intercept estimates of random coefficient model",
+  labs(title = "Judge random effects on intercept",
        subtitle = "Outcome variable: Docket total days of confinement",
-       x = "judge intercept") +
+       x = "judge random effect") +
   theme(
     panel.grid.minor = element_blank()
   )
@@ -508,11 +508,16 @@ judge_intercepts_mod08 %>%
 summary(judge_intercepts_mod08$judge_intercept)
 ```
 
+```{r}
+confint(judge_intercepts_mod08)
+```
+
 
 ```{r}
 judge_intercepts_mod08 %>% 
   arrange(desc(judge_intercept))
 ```
+
 
 ```{r}
 dockets %>% 
@@ -583,9 +588,9 @@ judge_intercepts_mod08_max %>%
   ggplot(aes(x = judge_intercept)) +
   geom_histogram(binwidth = 250, fill = "#88398A") +
   theme_bw() +
-  labs(title = "Judge intercept estimates of random coefficient model",
+  labs(title = "Judge random effects on intercept",
        subtitle = "Outcome variable: Docket max days of confinement",
-       x = "judge intercept") +
+       x = "judge random effect") +
   theme(
     panel.grid.minor = element_blank()
   )
