@@ -1,5 +1,5 @@
 ---
-title: "Fixed and Random Effects Model"
+title: "Random Coefficient Models"
 author: "Shanti Agung"
 date: "4/22/2021"
 output: html_document
@@ -337,120 +337,6 @@ library(lme4)
 
 ### Dependent variable: Total confinement days
 
-```{r}
-judge_total_intercept_model <- lmer(total_confinement_days ~ 1 + (1 | judge_id), dockets_data)
-
-```
-
-```{r}
-summary(judge_total_intercept_model)
-```
-The estimated fixed effects of 1488.0 is the average `total_confinement_days` across judges.
-
-Get the estimated intercept of each judge
-```{r}
-ranef(judge_total_intercept_model)$judge_id 
-```
-
-```{r}
-ranef(judge_total_intercept_model)
-
-```
-
-
-```{r}
-judge_total_model_01 <- lmer(total_confinement_days ~ 1 + gender + race + log(age) +
-                               number_prior_dockets_scaled +
-                               (1 + number_prior_dockets_scaled | judge_id), dockets_data)
-```
-
-```{r}
-judge_total_model_02 <- lmer(total_confinement_days ~ 1 + gender + race + log(age) +
-                               number_prior_dockets_scaled +
-                               (1 + gender + number_prior_dockets_scaled | judge_id), dockets_data)
-```
-
-```{r}
-# this one takes forever and doesn't give output
-judge_total_model_03 <- lmer(total_confinement_days ~ 1 + gender + race + log(age) +
-                               number_prior_dockets_scaled +
-                               (1 + gender + race +
-                                  number_prior_dockets_scaled | judge_id), dockets_data)
-```
-
-
-```{r}
-# this one takes forever and doesn't give output
-judge_total_model_04 <- lmer(total_confinement_days ~ 1 + gender + race + log(age) +
-                               number_prior_dockets_scaled +
-                               (1 + race + number_prior_dockets_scaled | judge_id), dockets_data)
-```
-```{r}
-judge_total_model_05 <- lmer(total_confinement_days ~ 1 + gender + race + log(age) +
-                               number_prior_dockets_scaled + grade_M_scaled + grade_M1_scaled +
-                               grade_M2_scaled + grade_M3_scaled + grade_F_scaled +
-                               grade_F1_scaled + grade_F2_scaled + grade_F3_scaled +
-                               grade_S_scaled + grade_S1_scaled + grade_S2_scaled +
-                               grade_S3_scaled + grade_IC_scaled + grade_H1_scaled +
-                               court_types_cp + court_types_mc + court_types_pac +
-                               year + month +
-                               (1 | judge_id), dockets_data)
-```
-
-```{r}
-judge_total_model_06 <- lmer(total_confinement_days ~ 1 + gender + race + log(age) +
-                               number_prior_dockets_scaled + M + M1 +
-                               M2 + M3 + `F` +
-                               F1 + F2 + F3 +
-                               S + S1 + S2 +
-                               S3 + IC + H1 +
-                               court_types_cp + court_types_mc + court_types_pac +
-                               year + month +
-                               (1 | judge_id), dockets_data)
-```
-
-Model 07:
-*Level 1* $$\text{total_confinement_days}_{ij} = \beta_{0j} + \beta_{1}X_{1} + \dots + \beta_{41}X_{41} + e_{ij}$$
-
-*Level 2* $$\beta_{0j} = \beta_{0} + u_{0j}$$
-
-where $j  = \text{judge_id}$ and $X$s are the covariates.
-
-```{r}
-judge_total_model_07 <- lmer(total_confinement_days ~ 1 + gender + race + log(age) +
-                               number_prior_dockets + M + M1 +
-                               M2 + M3 + `F` +
-                               F1 + F2 + F3 +
-                               S + S1 + S2 +
-                               S3 + IC + H1 +
-                               court_types_cp + court_types_mc + court_types_pac +
-                               year + month +
-                               (1 | judge_id), dockets_data)
-
-# Need to include H2 into the model. Revised model: judge_total_model_08 below.
-```
-
-```{r}
-summary(judge_total_model_07)
-```
-
-```{r}
-judge_effects_mod07 <- ranef(judge_total_model_07)$judge_id 
-```
-
-```{r}
-judge_effects_mod07 <- tibble(judge_effects_mod07)
-
-```
-
-
-```{r}
-judge_effects_mod07 %>% 
-  rename(jeffect = `(Intercept)`) %>% 
-  ggplot(aes(x = jeffect)) +
-  geom_histogram()
-```
-
 Model specification
 *Level 1* $$\text{y}_{ij} = \beta_{0j} + \beta_{1}x_{1} + \dots + \beta_{47}x_{47} + e_{ij}$$
 
@@ -459,8 +345,9 @@ Model specification
 
 where $j  = \text{judge_id}$ and $x$s are the covariates.
 
+
 ```{r}
-judge_total_model_08 <- lmer(total_confinement_days ~ 1 + gender + race + log(age) +
+judge_total_intercept_model <- lmer(total_confinement_days ~ 1 + gender + race + log(age) +
                                number_prior_dockets + M + M1 +
                                M2 + M3 + `F` +
                                F1 + F2 + F3 +
@@ -473,27 +360,27 @@ judge_total_model_08 <- lmer(total_confinement_days ~ 1 + gender + race + log(ag
 
 
 ```{r}
-summary(judge_total_model_08)
+summary(judge_total_intercept_model)
 ```
 ```{r}
-ranef(judge_total_model_08)$judge_id
+ranef(judge_total_intercept_model)$judge_id
 ```
 
 
 ```{r}
-judge_intercepts_mod08 <- tibble(ranef(judge_total_model_08)$judge_id) %>%
-  rename(judge_intercept = `(Intercept)`) %>% 
+judge_total_ranef <- tibble(ranef(judge_total_intercept_model)$judge_id) %>%
+  rename(ranef_intercept = `(Intercept)`) %>% 
   mutate(judge_id = row_number())
 ```
 
 ```{r}
-judge_intercepts_mod08
+judge_total_ranef
 ```
 
 
 ```{r}
-judge_intercepts_mod08 %>% 
-  ggplot(aes(x = judge_intercept)) +
+judge_total_ranef %>% 
+  ggplot(aes(x = ranef_intercept)) +
   geom_histogram(binwidth = 250, fill = "#88398A") +
   theme_bw() +
   labs(title = "Judge random effects on intercept",
@@ -505,17 +392,13 @@ judge_intercepts_mod08 %>%
 ```
 
 ```{r}
-summary(judge_intercepts_mod08$judge_intercept)
+summary(judge_total_ranef$ranef_intercept)
 ```
 
+Order judges on harshness from high to low.
 ```{r}
-confint(judge_intercepts_mod08)
-```
-
-
-```{r}
-judge_intercepts_mod08 %>% 
-  arrange(desc(judge_intercept))
+judge_total_ranef %>% 
+  arrange(desc(ranef_intercept))
 ```
 
 
@@ -527,44 +410,10 @@ dockets %>%
 ```
 
 
-```{r}
-# this one takes forever and doesn't give output
-judge_total_full_model <- lmer(total_confinement_days ~ 1 + gender + race + log(age) +
-                                 number_prior_dockets + M + M1 + M2 + M3 + `F` + F1 + F2 +
-                                 F3 + S + S1 + S2 + S3 + IC + H1 + H2 + court_types_cp +
-                                 court_types_mc + court_types_pac + year + month +
-                                 (1 + gender + race + age +
-                                 number_prior_dockets_scaled + M + M1 + M2 + M3 + `F` + F1 + F2 +
-                                 F3 + S + S1 + S2 + S3 + IC + H1 + H2 | judge_id), dockets_data)
-```
-
 ### Dependent variable: Max confinement days
 
 ```{r}
-judge_max_intercept_model <- lmer(max_confinement_days ~ 1 + (1 | judge_id), dockets_data)
-```
-
-```{r}
-ranef(judge_max_intercept_model)$judge_id 
-```
-
-```{r}
-judge_max_model_07 <- lmer(max_confinement_days ~ 1 + gender + race + log(age) +
-                               number_prior_dockets + M + M1 +
-                               M2 + M3 + `F` +
-                               F1 + F2 + F3 +
-                               S + S1 + S2 +
-                               S3 + IC + H1 +
-                               court_types_cp + court_types_mc + court_types_pac +
-                               year + month +
-                               (1 | judge_id), dockets_data)
-```
-
-```{r}
-ranef(judge_max_model_07)$judge_id 
-```
-```{r}
-judge_max_model_08 <- lmer(max_confinement_days ~ 1 + gender + race + log(age) +
+judge_max_intercept_model <- lmer(max_confinement_days ~ 1 + gender + race + log(age) +
                                number_prior_dockets + M + M1 +
                                M2 + M3 + `F` +
                                F1 + F2 + F3 +
@@ -577,15 +426,15 @@ judge_max_model_08 <- lmer(max_confinement_days ~ 1 + gender + race + log(age) +
 
 
 ```{r}
-judge_intercepts_mod08_max <- tibble(ranef(judge_max_model_08)$judge_id) %>%
-  rename(judge_intercept = `(Intercept)`) %>% 
+judge_max_ranef <- tibble(ranef(judge_max_intercept_model)$judge_id) %>%
+  rename(ranef_intercept = `(Intercept)`) %>% 
   mutate(judge_id = row_number())
 
 ```
 
 ```{r}
-judge_intercepts_mod08_max %>% 
-  ggplot(aes(x = judge_intercept)) +
+judge_max_ranef %>% 
+  ggplot(aes(x = ranef_intercept)) +
   geom_histogram(binwidth = 250, fill = "#88398A") +
   theme_bw() +
   labs(title = "Judge random effects on intercept",
@@ -595,10 +444,10 @@ judge_intercepts_mod08_max %>%
     panel.grid.minor = element_blank()
   )
 ```
-
+Order judges on harshness from high to low.
 ```{r}
-judge_intercepts_mod08_max %>% 
-  arrange(desc(judge_intercept))
+judge_max_ranef %>% 
+  arrange(desc(ranef_intercept))
 ```
 
 
